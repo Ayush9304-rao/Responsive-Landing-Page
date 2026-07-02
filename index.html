@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillCraft Technology — Learn by building</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d14;
+    --surface:#12151f;
+    --surface-2:#171b28;
+    --border:#232838;
+    --border-soft:#1b1f2c;
+    --teal:#22d3af;
+    --teal-dim:#0f6e56;
+    --blue:#3b82f6;
+    --amber:#f5b942;
+    --text:#f2f3f7;
+    --text-mute:#8b93a8;
+    --text-faint:#565e73;
+    --nav-h:76px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit;text-decoration:none;}
+
+  /* background grid texture */
+  .bg-grid{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(var(--border-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+    opacity:0.5;
+  }
+
+  /* ===== NAV — signature circuit-trace bar ===== */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    height:var(--nav-h);
+    display:flex;align-items:center;
+    padding:0 clamp(20px,4vw,48px);
+    background:rgba(11,13,20,0);
+    border-bottom:1px solid transparent;
+    transition:background .35s ease, border-color .35s ease, backdrop-filter .35s ease;
+  }
+  nav.scrolled{
+    background:rgba(11,13,20,0.86);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);
+  }
+  .nav-inner{
+    max-width:1240px;margin:0 auto;width:100%;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{
+    display:flex;align-items:center;gap:10px;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;
+  }
+  .brand-mark{
+    width:30px;height:30px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand-mark svg{width:100%;height:100%;}
+
+  /* the trace bar itself */
+  .trace-menu{
+    position:relative;
+    display:flex;align-items:center;
+    gap:0;
+  }
+  .trace-line{
+    position:absolute;
+    left:0;right:0;top:50%;
+    height:1px;
+    background:var(--border);
+    transform:translateY(-50%);
+    z-index:0;
+  }
+  .trace-line-fill{
+    position:absolute;left:0;top:0;height:100%;width:0%;
+    background:linear-gradient(90deg, var(--teal), var(--blue));
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .trace-item{
+    position:relative;z-index:1;
+    display:flex;align-items:center;gap:8px;
+    padding:0 20px;
+    height:var(--nav-h);
+    font-size:14px;font-weight:500;color:var(--text-mute);
+    cursor:pointer;
+    transition:color .25s ease;
+  }
+  .trace-node{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--text-faint);
+    box-shadow:0 0 0 0 rgba(34,211,175,0);
+    transition:background .25s ease, box-shadow .25s ease, transform .25s ease;
+  }
+  .trace-item:hover, .trace-item.active{color:var(--text);}
+  .trace-item:hover .trace-node, .trace-item.active .trace-node{
+    background:var(--teal);
+    box-shadow:0 0 12px 2px rgba(34,211,175,0.55);
+    transform:scale(1.3);
+  }
+  .trace-item.active .trace-node{background:var(--amber);box-shadow:0 0 12px 2px rgba(245,185,66,0.55);}
+
+  .nav-cta{
+    padding:9px 18px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    font-size:13px;font-weight:500;
+    background:var(--surface);
+    transition:border-color .25s ease, background .25s ease;
+    white-space:nowrap;
+  }
+  .nav-cta:hover{border-color:var(--teal);background:var(--surface-2);}
+
+  .nav-toggle{
+    display:none;
+    width:34px;height:34px;
+    border:1px solid var(--border);border-radius:6px;
+    background:var(--surface);
+    align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .nav-toggle span, .nav-toggle::before, .nav-toggle::after{
+    content:'';display:block;width:16px;height:1px;background:var(--text-mute);
+  }
+  .nav-toggle{flex-direction:column;gap:4px;}
+
+  /* ===== HERO ===== */
+  main{position:relative;z-index:1;}
+  .hero{
+    min-height:100vh;
+    display:flex;align-items:center;
+    padding:calc(var(--nav-h) + 40px) clamp(20px,4vw,48px) 60px;
+  }
+  .hero-inner{
+    max-width:1240px;margin:0 auto;width:100%;
+    display:grid;grid-template-columns:1.1fr 0.9fr;gap:60px;align-items:center;
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    color:var(--teal);
+    border:1px solid var(--teal-dim);
+    background:rgba(34,211,175,0.06);
+    padding:6px 12px;border-radius:20px;
+    margin-bottom:22px;
+  }
+  .eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px 1px rgba(34,211,175,0.6);}
+  .hero h1{
+    font-size:clamp(38px,5.2vw,64px);
+    font-weight:700;line-height:1.05;
+    margin-bottom:22px;
+  }
+  .hero h1 .accent{color:var(--teal);}
+  .hero p{
+    color:var(--text-mute);font-size:17px;max-width:480px;margin-bottom:32px;
+  }
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap;}
+  .btn{
+    padding:13px 24px;border-radius:7px;font-size:14px;font-weight:600;
+    display:inline-flex;align-items:center;gap:8px;
+    transition:transform .2s ease, background .2s ease, border-color .2s ease;
+  }
+  .btn-primary{background:var(--teal);color:#04201a;}
+  .btn-primary:hover{transform:translateY(-2px);background:#3ee2bc;}
+  .btn-ghost{border:1px solid var(--border);color:var(--text);}
+  .btn-ghost:hover{border-color:var(--text-faint);transform:translateY(-2px);}
+
+  /* hero visual: schematic panel */
+  .schematic{
+    position:relative;
+    aspect-ratio:1/1;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--surface);
+    overflow:hidden;
+  }
+  .schematic svg{width:100%;height:100%;display:block;}
+
+  /* ===== stats strip ===== */
+  .stats{
+    max-width:1240px;margin:0 auto;
+    padding:0 clamp(20px,4vw,48px) 80px;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--border);
+    border:1px solid var(--border);border-radius:12px;overflow:hidden;
+  }
+  .stat{background:var(--surface);padding:26px 22px;}
+  .stat .num{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:700;color:var(--teal);}
+  .stat .label{font-size:13px;color:var(--text-mute);margin-top:4px;}
+
+  /* ===== sections ===== */
+  section{padding:100px clamp(20px,4vw,48px);}
+  .section-inner{max-width:1240px;margin:0 auto;}
+  .section-head{max-width:600px;margin-bottom:56px;}
+  .section-tag{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blue);margin-bottom:12px;display:block;}
+  .section-head h2{font-size:clamp(28px,3.4vw,40px);font-weight:600;}
+  .section-head p{color:var(--text-mute);margin-top:14px;font-size:16px;}
+
+  #tracks{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .track-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+  .track-card{
+    border:1px solid var(--border);border-radius:12px;padding:28px 24px;
+    background:var(--bg);
+    transition:border-color .25s ease, transform .25s ease;
+  }
+  .track-card:hover{border-color:var(--teal-dim);transform:translateY(-4px);}
+  .track-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-faint);margin-bottom:16px;}
+  .track-card h3{font-size:19px;font-weight:600;margin-bottom:10px;}
+  .track-card p{color:var(--text-mute);font-size:14px;}
+  .track-icon{width:38px;height:38px;margin-bottom:18px;color:var(--teal);}
+
+  #process .process-list{display:flex;flex-direction:column;}
+  .process-row{
+    display:grid;grid-template-columns:60px 1fr;gap:24px;
+    padding:26px 0;border-top:1px solid var(--border-soft);
+  }
+  .process-row:last-child{border-bottom:1px solid var(--border-soft);}
+  .process-index{font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:14px;}
+  .process-row h3{font-size:18px;font-weight:600;margin-bottom:6px;}
+  .process-row p{color:var(--text-mute);font-size:14px;max-width:560px;}
+
+  footer{
+    border-top:1px solid var(--border);
+    padding:40px clamp(20px,4vw,48px);
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;
+  }
+  footer .brand{font-size:15px;}
+  footer .foot-links{display:flex;gap:24px;font-size:13px;color:var(--text-mute);}
+  footer .foot-links a:hover{color:var(--text);}
+
+  @media (max-width:860px){
+    .hero-inner{grid-template-columns:1fr;}
+    .schematic{max-width:360px;margin:0 auto;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .track-grid{grid-template-columns:1fr;}
+    .trace-menu{
+      position:fixed;top:var(--nav-h);left:0;right:0;
+      flex-direction:column;align-items:stretch;
+      background:rgba(11,13,20,0.97);backdrop-filter:blur(14px);
+      border-bottom:1px solid var(--border);
+      max-height:0;overflow:hidden;
+      transition:max-height .35s ease;
+    }
+    .trace-menu.open{max-height:320px;}
+    .trace-line{display:none;}
+    .trace-item{height:auto;padding:16px 24px;border-bottom:1px solid var(--border-soft);}
+    .nav-toggle{display:flex;}
+    .nav-cta{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<nav id="siteNav">
+  <div class="nav-inner">
+    <a href="#top" class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 30 30" fill="none">
+          <rect x="1" y="1" width="28" height="28" rx="6" stroke="#22d3af" stroke-width="1.5"/>
+          <path d="M9 15h4l2-5 3 10 2-5h3" stroke="#22d3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      SkillCraft
+    </a>
+
+    <div class="trace-menu" id="traceMenu">
+      <div class="trace-line"><div class="trace-line-fill" id="traceFill"></div></div>
+      <a href="#top" class="trace-item active" data-target="top"><span class="trace-node"></span>Home</a>
+      <a href="#tracks" class="trace-item" data-target="tracks"><span class="trace-node"></span>Tracks</a>
+      <a href="#process" class="trace-item" data-target="process"><span class="trace-node"></span>Process</a>
+      <a href="#contact" class="trace-item" data-target="contact"><span class="trace-node"></span>Contact</a>
+    </div>
+
+    <a href="#contact" class="nav-cta">Start building →</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu"></button>
+  </div>
+</nav>
+
+<main id="top">
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <span class="eyebrow">SkillCraft Technology</span>
+        <h1>Learn to build by<br>actually <span class="accent">building.</span></h1>
+        <p>Project-based tracks in frontend engineering, backend systems, and product design — taught through real briefs, not slides.</p>
+        <div class="hero-actions">
+          <a href="#tracks" class="btn btn-primary">Explore tracks</a>
+          <a href="#process" class="btn btn-ghost">See how it works</a>
+        </div>
+      </div>
+
+      <div class="schematic" aria-hidden="true">
+        <svg viewBox="0 0 400 400" fill="none">
+          <circle cx="200" cy="200" r="70" stroke="#232838" stroke-width="1"/>
+          <circle cx="200" cy="200" r="130" stroke="#1b1f2c" stroke-width="1"/>
+          <path d="M200 130 V60 M200 270 V340 M130 200 H60 M270 200 H340" stroke="#232838" stroke-width="1"/>
+          <path d="M200 130 L200 90 L240 90" stroke="#3b82f6" stroke-width="1.5" fill="none"/>
+          <path d="M270 200 L310 200 L310 150" stroke="#22d3af" stroke-width="1.5" fill="none"/>
+          <path d="M200 270 L200 310 L150 310" stroke="#f5b942" stroke-width="1.5" fill="none"/>
+          <path d="M130 200 L90 200 L90 250" stroke="#22d3af" stroke-width="1.5" fill="none"/>
+          <circle cx="200" cy="200" r="34" fill="#12151f" stroke="#22d3af" stroke-width="1.5"/>
+          <text x="200" y="196" text-anchor="middle" fill="#f2f3f7" font-family="JetBrains Mono" font-size="11">craft</text>
+          <text x="200" y="210" text-anchor="middle" fill="#8b93a8" font-family="JetBrains Mono" font-size="9">v1.0</text>
+          <circle cx="240" cy="90" r="4" fill="#3b82f6"/>
+          <circle cx="310" cy="150" r="4" fill="#22d3af"/>
+          <circle cx="150" cy="310" r="4" fill="#f5b942"/>
+          <circle cx="90" cy="250" r="4" fill="#22d3af"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="stat"><div class="num">81</div><div class="label">Hands-on modules</div></div>
+    <div class="stat"><div class="num">12</div><div class="label">Live cohorts / year</div></div>
+    <div class="stat"><div class="num">6</div><div class="label">Week average track</div></div>
+    <div class="stat"><div class="num">94%</div><div class="label">Project completion rate</div></div>
+  </div>
+
+  <section id="tracks">
+    <div class="section-inner">
+      <div class="section-head">
+        <span class="section-tag">// tracks</span>
+        <h2>Pick a discipline. Ship a portfolio.</h2>
+        <p>Every track ends with a shipped, working project — not a certificate for watching videos.</p>
+      </div>
+      <div class="track-grid">
+        <div class="track-card">
+          <svg class="track-icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 21h8M12 18v3" stroke="currentColor" stroke-width="1.5"/></svg>
+          <div class="track-num">01</div>
+          <h3>Frontend engineering</h3>
+          <p>Responsive interfaces, component systems, and interaction design — built for real devices, not just desktop mockups.</p>
+        </div>
+        <div class="track-card">
+          <svg class="track-icon" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <div class="track-num">02</div>
+          <h3>Backend systems</h3>
+          <p>APIs, data modeling, and infrastructure fundamentals through services that hold up under real traffic.</p>
+        </div>
+        <div class="track-card">
+          <svg class="track-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <div class="track-num">03</div>
+          <h3>Product design</h3>
+          <p>Research, prototyping, and design systems — practiced on briefs pulled from working products.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="process">
+    <div class="section-inner">
+      <div class="section-head">
+        <span class="section-tag">// how it works</span>
+        <h2>Four steps, one shipped project</h2>
+      </div>
+      <div class="process-list">
+        <div class="process-row">
+          <div class="process-index">01</div>
+          <div><h3>Get a real brief</h3><p>Each module opens with a task spec, not a lecture — the same way work arrives on a team.</p></div>
+        </div>
+        <div class="process-row">
+          <div class="process-index">02</div>
+          <div><h3>Build against constraints</h3><p>Fixed requirements, real deadlines, and a working reference to compare against.</p></div>
+        </div>
+        <div class="process-row">
+          <div class="process-index">03</div>
+          <div><h3>Get reviewed by a mentor</h3><p>Line-by-line feedback on your actual code and decisions, not a generic rubric.</p></div>
+        </div>
+        <div class="process-row">
+          <div class="process-index">04</div>
+          <div><h3>Ship it to your portfolio</h3><p>Finished projects go live under your own domain, ready to show employers.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="contact">
+  <a href="#top" class="brand">SkillCraft Technology</a>
+  <div class="foot-links">
+    <a href="#tracks">Tracks</a>
+    <a href="#process">Process</a>
+    <a href="#top">hello@skillcraft.tech</a>
+  </div>
+</footer>
+
+<script>
+  const nav = document.getElementById('siteNav');
+  const traceFill = document.getElementById('traceFill');
+  const items = document.querySelectorAll('.trace-item');
+  const sections = ['top','tracks','process','contact'].map(id => document.getElementById(id));
+  const toggle = document.getElementById('navToggle');
+  const traceMenu = document.getElementById('traceMenu');
+
+  function onScroll(){
+    const y = window.scrollY;
+    nav.classList.toggle('scrolled', y > 40);
+
+    const docH = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = docH > 0 ? Math.min(y / docH, 1) : 0;
+    traceFill.style.width = (progress * 100) + '%';
+
+    let currentId = 'top';
+    sections.forEach(sec => {
+      if(sec && sec.getBoundingClientRect().top - 100 <= 0){
+        currentId = sec.id;
+      }
+    });
+    items.forEach(item => item.classList.toggle('active', item.dataset.target === currentId));
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  toggle.addEventListener('click', () => traceMenu.classList.toggle('open'));
+  items.forEach(item => item.addEventListener('click', () => traceMenu.classList.remove('open')));
+</script>
+</body>
+</html>
